@@ -1,13 +1,6 @@
 // models/Book.js
 const mongoose = require('mongoose');
 
-const bookSchema = new mongoose.Schema({
-  title: {
-    type: String, 
-    required: true
-  }
-});
-
 const commentSchema = new mongoose.Schema({
   book_id: {
     type: String,
@@ -19,4 +12,5 @@ const commentSchema = new mongoose.Schema({
   }
 })
 
-module.exports = mongoose.model('Book', bookSchema);
+
+module.exports = mongoose.model('Comment', commentSchema);

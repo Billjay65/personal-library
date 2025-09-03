@@ -9,6 +9,7 @@
 'use strict';
 
 const Book = require("../models/Book");
+const Comment = require("../models/Comment");
 
 module.exports = function (app) {
   /*** my version ***/
@@ -24,12 +25,30 @@ module.exports = function (app) {
 
 
   app.route('/api/books')
-    .get(function (req, res){
-      //response will be array of book objects
-      //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
+    .get(async function (req, res) {
+      try {
+        const books = await Book.find({});
+
+        // For each book, fetch comment count
+        const booksWithCounts = await Promise.all(
+          books.map(async (book) => {
+            const count = await Comment.countDocuments({ book_id: book._id });
+            return {
+              _id: book._id,
+              title: book.title,
+              commentcount: count
+            };
+          })
+        );
+
+        res.json(booksWithCounts);
+      } catch (err) {
+        console.error(err);
+        res.json({ error: 'could not fetch books' });
+      }
     })
-    
-    .post(function (req, res){
+
+    .post(function (req, res) {
       let title = req.body.title;
 
       if (!title) {
@@ -45,7 +64,7 @@ module.exports = function (app) {
       // create and save book in database
       createAndSaveBook(bookData, (err, saved) => {
         if (err) {
-          return res.json({ 
+          return res.json({
             error: 'could not save book'
           });
         }
@@ -56,30 +75,49 @@ module.exports = function (app) {
           title: saved.title
         })
       });
-      
+
     })
-    
-    .delete(function(req, res){
+
+    .delete(function (req, res) {
       //if successful response will be 'complete delete successful'
     });
 
 
 
   app.route('/api/books/:id')
-    .get(function (req, res){
+    .get(function (req, res) {
       let bookid = req.params.id;
-      //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
+
+      // find the book by id
+      Book.findById(bookid, (err, book) => {
+        if (err || !book) {
+          return res.send('no book exists');
+        }
+
+        // find comments linked to this book
+        Comment.find({ bookId: book._id }, (err, comments) => {
+          if (err) {
+            return res.json({ error: 'could not fetch comments' });
+          }
+
+          res.json({
+            _id: book._id,
+            title: book.title,
+            comments: comments.map(c => c.comment)
+          });
+        });
+      });
     })
-    
-    .post(function(req, res){
+
+    .post(function (req, res) {
       let bookid = req.params.id;
       let comment = req.body.comment;
       //json res format same as .get
     })
-    
-    .delete(function(req, res){
+
+    .delete(function (req, res) {
       let bookid = req.params.id;
       //if successful response will be 'delete successful'
     });
-  
+
 };
