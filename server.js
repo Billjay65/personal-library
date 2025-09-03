@@ -3,7 +3,12 @@
 const express     = require('express');
 const bodyParser  = require('body-parser');
 const cors        = require('cors');
+const mongoose    = require('mongoose'); 
 require('dotenv').config();
+
+/*** MyVersion ***/
+// connect to database
+mongoose.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const apiRoutes         = require('./routes/api.js');
 const fccTestingRoutes  = require('./routes/fcctesting.js');

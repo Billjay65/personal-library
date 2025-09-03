@@ -8,8 +8,21 @@
 
 'use strict';
 
+const Book = require("../models/Book");
+
 module.exports = function (app) {
-  /*** MyVersion ***/
+  /*** my version ***/
+  // define method to save book locally in this file
+  const createAndSaveBook = (bookData, done) => {
+    const book = new Book(bookData);
+
+    book.save((err, savedBook) => {
+      if (err) return done(err);
+      return done(null, savedBook);
+    });
+  };
+
+
   app.route('/api/books')
     .get(function (req, res){
       //response will be array of book objects
@@ -18,7 +31,32 @@ module.exports = function (app) {
     
     .post(function (req, res){
       let title = req.body.title;
-      //response will contain new book object including atleast _id and title
+
+      if (!title) {
+        console.log('missing required field title');
+        return res.send('missing required field title');
+      }
+
+      // build bookData object with input, title
+      const bookData = {
+        title: title
+      };
+
+      // create and save book in database
+      createAndSaveBook(bookData, (err, saved) => {
+        if (err) {
+          return res.json({ 
+            error: 'could not save book'
+          });
+        }
+
+        //response will contain new book object including atleast _id and title
+        res.json({
+          _id: saved._id,
+          title: saved.title
+        })
+      });
+      
     })
     
     .delete(function(req, res){
