@@ -79,8 +79,15 @@ module.exports = function (app) {
     })
 
     .delete(function (req, res) {
-      //if successful response will be 'complete delete successful'
+      // delete all books
+      Book.deleteMany({}, (err) => {
+        if (err) {
+          return res.json({ error: 'could not delete books' });
+        }
+        res.send('complete delete successful');
+      });
     });
+
 
 
 
@@ -112,12 +119,57 @@ module.exports = function (app) {
     .post(function (req, res) {
       let bookid = req.params.id;
       let comment = req.body.comment;
-      //json res format same as .get
+
+      // check required comment field
+      if (!comment) {
+        return res.send('missing required field comment');
+      }
+
+      // find the book first
+      Book.findById(bookid, (err, book) => {
+        if (err || !book) {
+          return res.send('no book exists');
+        }
+
+        // create and save comment linked to the book
+        const newComment = new Comment({
+          book_id: book._id,
+          comment: comment
+        });
+
+        newComment.save((err) => {
+          if (err) {
+            return res.send('error saving comment');
+          }
+
+          // fetch all comments for this book
+          Comment.find({ book_id: book._id }, (err, comments) => {
+            if (err) {
+              return res.json({ error: 'could not fetch comments' });
+            }
+
+            res.json({
+              _id: book._id,
+              title: book.title,
+              comments: comments.map(c => c.comment) // map comment text
+            });
+          });
+        });
+      });
     })
 
     .delete(function (req, res) {
       let bookid = req.params.id;
-      //if successful response will be 'delete successful'
+
+      // find book then delete
+      Book.findByIdAndDelete(bookid, (err, deletedBook) => {
+        if (err || !deletedBook) {
+          return res.send('no book exists');
+        }
+
+        res.send('delete successful');
+      });
     });
+
 
 };
