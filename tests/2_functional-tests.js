@@ -116,18 +116,28 @@ suite('Functional Tests', function () {
       });
 
       test('Test GET /api/books/[id] with valid id in db', function (done) {
+        // first, create a book
         chai
           .request(server)
-          .get('/api/books/68c4050eac0a22006b46225e')
+          .post('/api/books')
+          .send({ title: 'Temporary Test Book' })
           .end(function (err, res) {
-            assert.equal(res.status, 200);
-            assert.equal(res.body._id,
-               '68c4050eac0a22006b46225e',
-              'Response should be id of book'
-            )
-            done();
+            const bookId = res.body._id;
+
+            // now GET the book by that id
+            chai
+              .request(server)
+              .get('/api/books/' + bookId)
+              .end(function (err, res) {
+                assert.equal(res.status, 200);
+                assert.equal(res.body._id, bookId, 'Response should be id of book');
+                assert.property(res.body, 'title', 'Book should contain a title');
+                assert.property(res.body, 'comments', 'Book should contain comments');
+                done();
+              });
           });
       });
+
 
     });
 
@@ -135,25 +145,29 @@ suite('Functional Tests', function () {
     suite('POST /api/books/[id] => add comment/expect book object with id', function () {
 
       test('Test POST /api/books/[id] with comment', function (done) {
+        // first, create a book so we have a valid id
         chai
           .request(server)
-          .post('/api/books/68c4050eac0a22006b46225e')
-          .send({
-            comment: 'Very nice book'
-          })
+          .post('/api/books')
+          .send({ title: 'Book to comment on' })
           .end(function (err, res) {
-            assert.equal(res.status, 200);
-            assert.equal(
-              res.body._id,
-              '68c4050eac0a22006b46225e',
-              'Response should contain book id'
-            );
-            assert.property(res.body, 'comments', 
-              'Book should contain commments property'
-            );
-            done();
+            const bookId = res.body._id;
+
+            // now post a comment to that book
+            chai
+              .request(server)
+              .post('/api/books/' + bookId)
+              .send({ comment: 'Very nice book' })
+              .end(function (err, res) {
+                assert.equal(res.status, 200);
+                assert.equal(res.body._id, bookId, 'Response should contain book id');
+                assert.property(res.body, 'comments', 'Book should contain comments property');
+                assert.include(res.body.comments, 'Very nice book', 'Comment should be saved');
+                done();
+              });
           });
       });
+
 
       test('Test POST /api/books/[id] without comment field', function (done) {
         chai
@@ -215,7 +229,7 @@ suite('Functional Tests', function () {
                   'Response should be a success string'
                 )
               })
-              done();
+            done();
           })
       });
 
