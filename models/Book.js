@@ -8,15 +8,4 @@ const bookSchema = new mongoose.Schema({
   }
 });
 
-const commentSchema = new mongoose.Schema({
-  book_id: {
-    type: String,
-    required: true
-  },
-  comment: {
-    type: String,
-    required: true
-  }
-})
-
 module.exports = mongoose.model('Book', bookSchema);
